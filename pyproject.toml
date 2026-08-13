@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "test"
+version = "0.1.0"
+description = ""
+authors = ["wonjun.kim"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pycryptodome = "^3.23.0"
+sqlalchemy = "^2.0.44"
+fastapi = "^0.121.0"
+uvicorn = "^0.38.0"
+python-multipart = "^0.0.20"
+aiofiles = "^24.1.0"
+opendataloader-pdf = ">=2.2.1"
+openai = "^2.31.0"
+pymysql = "^1.1.0"               # DBPool 의 mariadb+pymysql DSN 이 요구하는 드라이버
+python-dotenv = "^1.0.0"         # 로컬 테스트용 .env. 운영은 환경변수를 직접 준다
+pydantic = "^2.7"                # 직접 import 하므로 명시. v1 이 해석되면 코드가 깨진다.
+redis = ">=4.2"                  # redis.asyncio 가 들어온 버전
+
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = false
+warn_unused_configs = true
+ignore_missing_imports = true
+no_implicit_optional = false
+check_untyped_defs = false
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

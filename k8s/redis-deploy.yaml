@@ -1,0 +1,75 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-api-redis
+  namespace: integration-api
+  labels:
+    app: integration-api-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: integration-api-redis
+  template:
+    metadata:
+      labels:
+        app: integration-api-redis
+    spec:
+      containers:
+        - name: integration-api-redis
+          image: redis:8.8.1
+          imagePullPolicy: Always
+          ports:
+            - name: redis
+              containerPort: 6379
+          env:
+            - name: TZ
+              value: Asia/Seoul
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          livenessProbe:
+            exec:
+              command: ['redis-cli', 'ping']
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          volumeMounts:
+            - name: timezone-config
+              mountPath: /etc/localtime
+            - name: data
+              mountPath: /data
+
+      volumes:
+        - name: timezone-config
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Seoul
+        - name: data
+          hostPath:
+            path: /raid/integration-api/data/redis
+      nodeSelector:
+        app: "true"
+        master: "true"
+      restartPolicy: Always
+---
+kind: Service
+apiVersion: v1
+metadata:
+  # Deployment 와 같은 네임스페이스여야 한다. selector 는 네임스페이스를 넘지 못하므로
+  # 다르면 엔드포인트가 비어 있는 채로 정상처럼 보인다 (kubectl get endpoints 로 확인).
+  name: integration-api-redis-svc
+  namespace: integration-api
+spec:
+  # NodePort 는 클러스터 밖에서 redis-cli 로 붙어 보기 위한 것이다.
+  # 앱은 같은 네임스페이스라 integration-api-redis-svc:6379 로 붙는다.
+  type: NodePort
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+      nodePort: 30379
+  selector:
+    app: integration-api-redis

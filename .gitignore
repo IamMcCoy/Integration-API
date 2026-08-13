@@ -1,0 +1,21 @@
+.idea
+
+.DS_Store
+
+script/
+
+data/
+
+# 실제 자격증명. .example 파일만 커밋한다.
+.env
+.env.local
+k8s/ia-secret.yaml
+# 이미 추적 중이면 git rm --cached conf/db.properties 한 번 해줘야 한다.
+conf/db.properties
+
+__pycache__/
+*.py[cod]
+
+.claude
+
+CLAUDE.md

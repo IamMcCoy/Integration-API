@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property>
+        <name>redis_host</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>redis_port</name>
+        <value>6379</value>
+    </property>
+    <property>
+        <name>redis_db</name>
+        <value>0</value>
+    </property>
+    <property>
+        <name>redis_password</name>
+        <value></value>
+    </property>
+
+    <!-- 업로드 파일이 착지하는 디렉토리.
+         레플리카가 2개 이상이면 반드시 ReadWriteMany 공유 볼륨이어야 한다.
+         POST 를 받은 파드와 태스크를 처리하는 워커 파드가 다를 수 있다. -->
+    <property>
+        <name>upload_staging_dir</name>
+        <value>/opt/app/staging</value>
+    </property>
+    <property>
+        <name>upload_max_bytes</name>
+        <value>20971520</value>
+    </property>
+
+    <!-- 검토용으로 남긴 업로드 원본을 며칠 뒤 지울지. 0 이면 지우지 않는다.
+         pending 이 남은 태스크의 원본은 이 값과 무관하게 보존한다 — 검토 중이다. -->
+    <property>
+        <name>review_retention_days</name>
+        <value>30</value>
+    </property>
+
+    <!-- 완료된 태스크 상태를 Redis 에 유지하는 시간(초). 기본 24시간. -->
+    <property>
+        <name>task_ttl_seconds</name>
+        <value>86400</value>
+    </property>
+    <property>
+        <name>task_queue_block_seconds</name>
+        <value>5</value>
+    </property>
+    <!-- 한 프로세스에서 돌릴 워커 수. 워커 하나는 태스크 하나를 잡고 끝까지 간다.
+         LLM 호출이 붙어 태스크당 수 분이 걸리므로, 1 이면 문서 하나가 뒤를 전부 막는다.
+         OpenAI 동시 요청 수는 워커 수와 무관하게 openai_max_concurrency 로 묶인다. -->
+    <property>
+        <name>worker_count</name>
+        <value>4</value>
+    </property>
+
+    <!-- API 키는 여기 두지 않는다. OpenAI SDK 가 OPENAI_API_KEY 환경변수를 직접 읽는다.
+         이 파일은 ConfigMap 으로 마운트되므로 비밀을 평문으로 담으면 안 된다. -->
+
+    <!-- 비워 두면 OpenAI 공식 엔드포인트. 사내 vLLM 등 호환 서버를 쓰려면 여기에 넣는다. -->
+    <property>
+        <name>openai_base_url</name>
+        <value></value>
+    </property>
+    <!-- 선별은 청크마다 부르므로 호출 수가 가장 많고, 판정은 참/거짓 하나뿐이다.
+         가장 싸고 빠른 모델을 쓴다. -->
+    <property>
+        <name>openai_filter_model</name>
+        <value>gpt-4o-mini</value>
+    </property>
+    <!-- 추출은 근거 문자열을 원문 그대로 옮겨야 해서 정확도가 곧 점수다.
+         여기서 아끼면 채점에서 깎여 사람 검토가 늘어난다. -->
+    <property>
+        <name>openai_extract_model</name>
+        <value>gpt-4o-mini</value>
+    </property>
+    <!-- 청크마다 LLM 을 부르므로 동시 요청 수를 묶어 둔다. 레이트 리밋에 맞춰 조정한다. -->
+    <property>
+        <name>openai_max_concurrency</name>
+        <value>8</value>
+    </property>
+    <!-- 같은 문서를 두 번 올리면 같은 규격이 나와야 한다. 기본값(1.0)이면 추출이
+         실행마다 흔들려 적재되는 파라미터 집합이 달라진다.
+         추론 모델(gpt-5 계열)은 이 인자를 받지 않으므로 그때는 비워 둔다. -->
+    <property>
+        <name>openai_temperature</name>
+        <value>0</value>
+    </property>
+
+    <!-- 프롬프트. 모델을 바꾸지 않고 문구만 조정할 때 여기만 고치고 파드를 재시작한다.
+         효과는 scripts/2026-08-06-filter-models.py 로 재볼 수 있다. -->
+
+    <!-- 선별만 영어다. 청크마다 들어가는데 한글은 토크나이저에서 글자당 1~2토큰이라
+         누적 차이가 크다. 거짓 목록이 정밀도를 좌우하므로 줄이지 말 것. -->
+    <property>
+        <name>filter_prompt</name>
+        <value>
+You read vendor REST API guides for network security appliances.
+
+True if the excerpt describes a specific API's call spec: endpoint,
+request parameters, response fields, or data types.
+
+False: table of contents, preface, install/setup guides, change logs,
+copyright notices, glossaries, hardware spec sheets, error-code lists alone,
+GUI click-through instructions.
+        </value>
+    </property>
+
+    <!-- 추출은 대상이 한국어 문서임을 알리고, evidence 가 원문과 문자 단위로 대조된다는
+         사실을 준다. 모델이 지시를 지켜야 할 이유를 알면 준수율이 오른다 — 이 문단을
+         빼면 적중이 23에서 18로 떨어진다. -->
+    <property>
+        <name>extract_prompt</name>
+        <value>
+You extract REST API call specs from Korean vendor guides for network security appliances.
+
+- Extract only what the excerpt states. Do not add common REST conventions.
+- `evidence`: copy the source line verbatim, in the original Korean. Never translate or
+  paraphrase — this value is matched against the source text character by character, and a
+  reworded line is discarded. For a table row, copy the entire row.
+- Omit any parameter you cannot back with evidence.
+- `raw_type`: the document's own notation (varchar(64), 문자열, YYYY-MM-DD).
+  `type`: its JSON primitive.
+- Flatten nested response fields into paths like data.items[].deviceId.
+- A parameterless API is still a spec: leave the arrays empty, fill endpoint and method.
+- `endpoint`: copy the path exactly as written. Never guess. No path in the excerpt -> null.
+- No API spec in the excerpt -> empty specs array.
+        </value>
+    </property>
+
+    <property>
+        <name>identify_prompt</name>
+        <value>
+아래는 네트워크 보안 장비 벤더의 REST API 가이드 문서 앞부분이다.
+이 문서가 어느 제조사의 어느 장비를 위한 것이고 버전이 무엇인지 찾아라.
+문서에 적혀 있지 않은 값은 지어내지 말고 빈 문자열로 둔다.
+        </value>
+    </property>
+
+    <!-- 추출 신뢰도 임계값. 이 점수 이상이면 사람 확인 없이 적재한다. -->
+    <property>
+        <name>score_auto_threshold</name>
+        <value>90</value>
+    </property>
+    <!-- 이 점수 미만이면 반려한다. 사이 구간은 사람 승인을 기다린다. -->
+    <property>
+        <name>score_review_threshold</name>
+        <value>70</value>
+    </property>
+</configuration>

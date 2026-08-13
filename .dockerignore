@@ -1,0 +1,7 @@
+# 이미지에 들어가는 것은 src + poetry 메타데이터뿐이다. 나머지는 빌드 컨텍스트에서 제외 —
+# 특히 data/(대상 PDF 수백 MB)와 .env(비밀)가 이미지·컨텍스트로 새지 않게 한다.
+*
+!src
+!pyproject.toml
+!poetry.lock
+**/__pycache__

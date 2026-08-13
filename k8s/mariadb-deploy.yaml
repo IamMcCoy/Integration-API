@@ -1,0 +1,115 @@
+---
+# 스키마는 sql/schema.sql 하나가 진실이다. 여기 복붙하지 않고 파일에서 ConfigMap 을 만든다.
+#
+#   kubectl -n integration-api create configmap integration-api-mariadb-schema \
+#       --from-file=schema.sql=sql/schema.sql
+#
+# /docker-entrypoint-initdb.d 에 마운트하면 데이터 디렉토리가 비어 있는 첫 기동에만
+# 자동 적용된다. 이미 데이터가 있으면 무시되므로, 스키마를 바꿨을 때는 직접 적용해야 한다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-api-mariadb
+  namespace: integration-api
+  labels:
+    app: integration-api-mariadb
+spec:
+  replicas: 1
+  strategy:
+    # hostPath 볼륨을 두 파드가 동시에 잡으면 데이터가 깨진다. 이전 파드를 먼저 내린다.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: integration-api-mariadb
+  template:
+    metadata:
+      labels:
+        app: integration-api-mariadb
+    spec:
+      containers:
+        - name: integration-api-mariadb
+          image: mariadb:11.4
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: mysql
+              containerPort: 3306
+          args:
+            # DDL 에도 utf8mb4 를 명시했지만 서버 기본값도 맞춰 둔다.
+            # 한글 설명이 들어가는 컬럼이 많다.
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: MARIADB_DATABASE
+              value: integration_api
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: integration-api-mariadb-secret
+                  key: root-password
+            - name: MARIADB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: integration-api-mariadb-secret
+                  key: username
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: integration-api-mariadb-secret
+                  key: password
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          livenessProbe:
+            exec:
+              command: ['healthcheck.sh', '--connect', '--innodb_initialized']
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          readinessProbe:
+            exec:
+              command: ['healthcheck.sh', '--connect', '--innodb_initialized']
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: timezone-config
+              mountPath: /etc/localtime
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: schema
+              mountPath: /docker-entrypoint-initdb.d
+
+      volumes:
+        - name: timezone-config
+          hostPath:
+            path: /usr/share/zoneinfo/Asia/Seoul
+        - name: data
+          hostPath:
+            path: /raid/integration-api/data/mariadb
+        - name: schema
+          configMap:
+            name: integration-api-mariadb-schema
+      nodeSelector:
+        app: "true"
+        master: "true"
+      restartPolicy: Always
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: integration-api-mariadb-svc
+  namespace: integration-api
+spec:
+  # NodePort 는 밖에서 스키마를 적용하거나 적재 결과를 확인하기 위한 것이다.
+  # 앱은 integration-api-mariadb-svc:3306 으로 붙는다.
+  type: NodePort
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+      nodePort: 30306
+  selector:
+    app: integration-api-mariadb

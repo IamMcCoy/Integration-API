@@ -1,8 +1,4 @@
 """
-Author : Wonjun Kim
-e-mail : wonjun.kim@seculayer.com
-Powered by Seculayer © 2026 AI Team, R&D Center.
-
 선별을 LLM 없이 룰로 할 수 있는지 잰다.
 
 성공하면 청크마다 부르던 LLM 호출이 0 이 되고 판정이 완전히 결정적이 된다.

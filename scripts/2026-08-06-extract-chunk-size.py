@@ -1,8 +1,4 @@
 """
-Author : Wonjun Kim
-e-mail : wonjun.kim@seculayer.com
-Powered by Seculayer © 2026 AI Team, R&D Center.
-
 2026-08-06 실험 재현용. chunk_size 가 추출 정확도에 미치는 영향을 잰다.
 
 청킹 지표(파편·군집·쪼개진 API)는 chunk_size 를 키울수록 전부 좋아졌다. 하지만 큰 청크에는

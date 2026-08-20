@@ -1,8 +1,4 @@
 """
-Author : Wonjun Kim
-e-mail : wonjun.kim@seculayer.com
-Powered by Seculayer © 2026 AI Team, R&D Center.
-
 2026-08-06 실험 재현용. data/ 의 PDF 전부에 세 분할 설정을 나란히 돌린다.
 
   A. h1~h3            실험 당시 구현

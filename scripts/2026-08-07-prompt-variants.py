@@ -1,8 +1,4 @@
 """
-Author : Wonjun Kim
-e-mail : wonjun.kim@seculayer.com
-Powered by Seculayer © 2026 AI Team, R&D Center.
-
 2026-08-07 실험 재현용. 프롬프트 변형을 정확도로 비교한다.
 
 토큰만 보고 고르면 안 된다. 프롬프트 품질은 얼마나 온전히 뽑아내는가로 재야 하므로,

@@ -1,8 +1,4 @@
 """
-Author : Wonjun Kim
-e-mail : wonjun.kim@seculayer.com
-Powered by Seculayer © 2026 AI Team, R&D Center.
-
 2026-08-06 실험 재현용. 선별(filtering) 단계를 네 축으로 잰다.
 
   cost      모델 x reasoning_effort 별 토큰과 지연

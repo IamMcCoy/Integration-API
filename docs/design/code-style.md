@@ -7,16 +7,6 @@
 - 모든 모듈 첫 줄은 `from __future__ import annotations`
 - import 는 한 줄에 하나 (`from x import a` / `from x import b`)
 
-## 파일 헤더
-
-```python
-"""
-Author : Wonjun Kim
-e-mail : wonjun.kim@seculayer.com
-Powered by Seculayer © 2026 AI Team, R&D Center.
-"""
-```
-
 ## 이름
 
 - 파일명은 `PascalCase.py`, 그 안의 주 클래스명과 일치시킨다 (`FileReader.py` → `class FileReader`)

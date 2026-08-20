@@ -1,8 +1,3 @@
-"""
-Author : Wonjun Kim
-e-mail : wonjun.kim@seculayer.com
-Powered by Seculayer © 2026 AI Team, R&D Center.
-"""
 from __future__ import annotations
 
 import json

@@ -1,8 +1,3 @@
-"""
-Author : Wonjun Kim
-e-mail : wonjun.kim@seculayer.com
-Powered by Seculayer © 2026 AI Team, R&D Center.
-"""
 from __future__ import annotations
 
 #: 우선순위 순서. 앞쪽 구분자로 잘라서 크기가 맞으면 뒤쪽은 쓰지 않는다.
